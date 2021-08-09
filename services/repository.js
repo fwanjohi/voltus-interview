@@ -1,6 +1,8 @@
 const MongoClient = require('mongodb').MongoClient;
+const utils = require('./utils');
 const connectUrl = "mongodb+srv://admin:fxiAdmin8522@fxicluster.uh3gu.mongodb.net/";
 const dbName = "voltus";
+var ObjectId = require('mongodb').ObjectID;
 
 //DUMMY CUSTOMERS --
 exports.createCustomers = function () {
@@ -155,24 +157,6 @@ exports.getProgramCustomers = function (id, callBack) {
 
         });
 
-
-
-        // dbo.collection('programs').aggregate([
-        //     { $lookup:
-        //       {
-        //         from: 'customers',
-        //         localField: 'programId',
-        //         foreignField: '_id',
-        //         as: 'programCustomers'
-        //       }
-        //     }
-        //   ]).toArray(function(err, res) {
-        //     if (err) throw err;
-        //     console.log(JSON.stringify(res));
-        //     callBack(res);
-        //     db.close();
-        //});
-
     });
 }
 
@@ -212,6 +196,7 @@ exports.createNewIncident = function (corId, incident, callBack) {
         }
         const dbo = db.db(dbName);
         incident.createdOn = new Date().toUTCString();
+        incident._id = utils.createUUID();
         dbo.collection("incidents").insertOne(incident, function (err, res) {
             if (err) {
                 Logger.logError(corId, error);
@@ -233,6 +218,7 @@ exports.createDispatch = function (corId, dispatch) {
         }
         const dbo = db.db(dbName);
         dispatch.createdOn = new Date().toUTCString();
+        dispatch._id = utils.createUUID();
         dbo.collection("dispatches").insertOne(dispatch, function (err, res) {
             if (err) {
                 Logger.logError(corId, error);
@@ -252,6 +238,7 @@ exports.createDbLog = function (log) {
             return;
         }
         const dbo = db.db(dbName);
+        
         dbo.collection("logs").insertOne(log, function (err, res) {
             if (err) {
                 //NOTE : USE OTHER MEANS TO LOG DB ERRORS
@@ -263,8 +250,33 @@ exports.createDbLog = function (log) {
     });
 }
 
+exports.updateDispatchAcknowledgement = function (ack, callBack) {
+    MongoClient.connect(connectUrl, function (err, db) {
+        if (err) {
+            Logger.logError(corId, error);
+            callBack(false);
+        }
+        const dbo = db.db(dbName);
+        const query = { _id: ObjectId(ack._id) };
+       
+        var newvalues = { $set: {hasBeenAcknowledged: true, acknowledgebBy: ack.ackBy, acknowledgeOn : ack.ackTime } };
+        
+        dbo.collection("incidents").updateOne(query, newvalues, function (err, res) {
+            if (err) {
+                Logger.logError(corId, error);
+                callBack(false);
+            }
+            console.log(res);
 
-//ONLY FOR YOUSE BY THE FESTUS....!!! :)
+            callBack(true);
+            db.close();
+        });
+    });
+
+}
+
+
+//ONLY FOR USE BY THE FESTUS....!!! :)
 exports.purge = function (all) {
     console.log("purging transactional tables");
     MongoClient.connect(connectUrl, function (err, db) {

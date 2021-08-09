@@ -3,6 +3,7 @@ const repository = require('./repository');
 const logger = require('./logger');
 
 
+
 exports.dispatchIncident = function (correlationId, incident) {
 
     repository.getProgramCustomers(incident.program_id, (prog) => {

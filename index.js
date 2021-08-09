@@ -3,11 +3,20 @@ const repository = require('./services/repository');
 const dispatcher = require('./services/dispatcher');
 const urlParse = require('url-parse');
 const http = require('http');
+//const io = require('socket.io')(http);
 
 const connectUrl = "mongodb://localhost:27017/voltus";
 const app = express();
 const server = http.createServer(app);
 
+const io = require('socket.io')(server, {
+    cors: {
+      origins: ['http://localhost:4200']
+    }
+  });
+
+const cors = require('cors'); 
+app.use(cors());
 
 app.use(
     express.urlencoded({
@@ -89,8 +98,6 @@ app.delete('/purge', (req, res) => {
 });
 
 
-
-
 //http server
 server.listen(3000, () => {
     console.log('listening on *:3000');
@@ -99,6 +106,28 @@ server.listen(3000, () => {
     repository.createCustomers();
 
 });
+
+
+
+io.on('connection', (socket) => {
+    console.log('a user connected', socket.id);
+    socket.on('disconnect', () => {
+        console.log('user disconnected');
+    });
+
+    socket.on('handshake', (userId) => {
+        console.log('User : ' + userId + 'says hello');
+    });
+
+    socket.on('acknowledge', (ack) => {
+        console.log('Acknlowledgement Received', ack);
+    
+        repository.updateDispatchAcknowledgement(ack, (val) => {           
+            console.log('Ack =', val);
+        });
+    });
+})
+
 
 //hellperfor GUID
 function createUUID() {
