@@ -12,14 +12,15 @@ exports.dispatchIncident = function (correlationId, incident) {
             let customer = customers[x];
             let sent = false;
             let msg = 'Dear Voltan,\
-            You have been dispatched as part of the Program "' + incident.name + ' "\
+            You have been dispatched as part of the Program "' + prog.name + ' "\
             Please have your full curtailment plan in effect between the hours\
-            of ' + incident.start_time + " " + incident.end_time;
+            of ' + incident.start_time + " and " + incident.end_time;
 
             let dispatch = {
                 
                 incidentId: incident._id,
                 programId : incident.program_id,
+                programName: prog.name,
                 customerId: customer._id,
                 customerName: customer.name,
                 message: msg,

@@ -17,6 +17,7 @@ app.use(
 
 app.use(express.json())
 
+//get a specific customer
 app.get('/customer', (req, res) => {
 
     var q = urlParse(req.url, true).query;
@@ -30,19 +31,43 @@ app.get('/customer', (req, res) => {
 
 });
 
+//gets all customers involved in a program
 app.get('/program/customer', (req, res) => {
 
     var q = urlParse(req.url, true).query;
 
-    var progId = q.pid;
+    
 
-    repository.getProgramCustomers(progId, (val) => {
-        console.log("programCustomers", val);
+    if(!q || !q.pid){
+        res.status(400).end();
+    }
+
+    repository.getProgramCustomers(q.pid, (val) => {
+        //console.log("programCustomers", val);
         res.send(val);
     });
 
 });
 
+//gets all dispatch that involve a customer
+app.get('/dispatch/customer', (req, res) => {
+
+    var q = urlParse(req.url, true).query;
+    if(!q || !q.cid){
+        res.status(400).end();
+    }
+
+    repository.getDispatchesForCustomer(q.cid, (val) => {
+        //console.log("programCustomers", val);
+        res.send(val);
+    });
+
+});
+
+
+
+
+//Creates an incident for a program
 app.post('/incident', (req, res) => {
     var incident = req.body;
     

@@ -176,6 +176,34 @@ exports.getProgramCustomers = function (id, callBack) {
     });
 }
 
+exports.getDispatchesForCustomer = function(cid, callBack){
+    let custId = parseInt(cid);
+    
+    MongoClient.connect(connectUrl, function (err, db) {
+        if (err) {
+            console.error('ERROR connecting:', err);
+            callBack([]);
+        }
+
+        const dbo = db.db(dbName);
+        const query = { customerId: custId };
+        dbo.collection("dispatches").find(query).toArray(function (err, result) {
+
+            if (err) {
+                console.error('Error getting customer: ', err);
+               
+                callBack([]);
+            } else {
+                callBack(result);
+                
+            }
+
+        });
+
+
+    });
+}
+
 exports.createNewIncident = function (corId, incident, callBack) {
     MongoClient.connect(connectUrl, function (err, db) {
         if (err) {
