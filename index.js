@@ -1,8 +1,11 @@
 const express = require('express');
-const repository = require('./services/repository');
-const dispatcher = require('./services/dispatcher');
 const urlParse = require('url-parse');
 const http = require('http');
+const repository = require('./services/repository');
+const dispatcher = require('./services/dispatcher');
+const utils = require('./services/utils');
+const logger = require('./services/logger');
+
 //const io = require('socket.io')(http);
 
 const connectUrl = "mongodb://localhost:27017/voltus";
@@ -11,11 +14,12 @@ const server = http.createServer(app);
 
 const io = require('socket.io')(server, {
     cors: {
-      origins: ['http://localhost:4200']
+        origins: ['http://localhost:4200']
     }
-  });
+});
 
-const cors = require('cors'); 
+const cors = require('cors');
+const { Logger } = require('mongodb');
 app.use(cors());
 
 app.use(
@@ -45,9 +49,9 @@ app.get('/program/customer', (req, res) => {
 
     var q = urlParse(req.url, true).query;
 
-    
 
-    if(!q || !q.pid){
+
+    if (!q || !q.pid) {
         res.status(400).end();
     }
 
@@ -62,7 +66,7 @@ app.get('/program/customer', (req, res) => {
 app.get('/dispatch/customer', (req, res) => {
 
     var q = urlParse(req.url, true).query;
-    if(!q || !q.cid){
+    if (!q || !q.cid) {
         res.status(400).end();
     }
 
@@ -79,8 +83,8 @@ app.get('/dispatch/customer', (req, res) => {
 //Creates an incident for a program
 app.post('/incident', (req, res) => {
     var incident = req.body;
-    
-    let correlationId = createUUID();
+
+    let correlationId = utils.createUUID();
 
     repository.createNewIncident(correlationId, incident, (val) => {
         console.log("incident created", val);
@@ -108,7 +112,7 @@ server.listen(3000, () => {
 });
 
 
-
+//WebSocket Hookup for direct connection
 io.on('connection', (socket) => {
     console.log('a user connected', socket.id);
     socket.on('disconnect', () => {
@@ -121,18 +125,19 @@ io.on('connection', (socket) => {
 
     socket.on('acknowledge', (ack) => {
         console.log('Acknlowledgement Received', ack);
-    
-        repository.updateDispatchAcknowledgement(ack, (val) => {           
-            console.log('Ack =', val);
+        let corId = utils.createUUID();
+        repository.updateDispatchAcknowledgement(corId, ack, (success) => {
+
+            let log = {
+                datalogType: "dispatch-ack",
+                id: ack._id,
+                data: ack,
+                success: success
+            }
+            
+            ack["success"] = success;
+            logger.logAudit(corId, log);
+            socket.emit('acknowledge-update', [ack]);
         });
     });
 })
-
-
-//hellperfor GUID
-function createUUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-       var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-       return v.toString(16);
-    });
- }

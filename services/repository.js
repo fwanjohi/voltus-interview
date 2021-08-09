@@ -250,18 +250,17 @@ exports.createDbLog = function (log) {
     });
 }
 
-exports.updateDispatchAcknowledgement = function (ack, callBack) {
+exports.updateDispatchAcknowledgement = function (corId, ack, callBack) {
     MongoClient.connect(connectUrl, function (err, db) {
         if (err) {
             Logger.logError(corId, error);
             callBack(false);
         }
         const dbo = db.db(dbName);
-        const query = { _id: ObjectId(ack._id) };
-       
+        const query = { _id: ack._id };
         var newvalues = { $set: {hasBeenAcknowledged: true, acknowledgebBy: ack.ackBy, acknowledgeOn : ack.ackTime } };
         
-        dbo.collection("incidents").updateOne(query, newvalues, function (err, res) {
+        dbo.collection("dispatches").updateOne(query, newvalues, function (err, res) {
             if (err) {
                 Logger.logError(corId, error);
                 callBack(false);
