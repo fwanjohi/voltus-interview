@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/177a9ede-66c7-450f-b9ed-717a9a365555/resourceGroups/appsvc_linux_centralus/providers/Microsoft.Web/sites/fxi-voltus-dispatcher",
+    "appService.deploySubpath": "."
+}

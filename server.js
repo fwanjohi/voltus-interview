@@ -5,21 +5,10 @@ const repository = require('./services/repository');
 const dispatcher = require('./services/dispatcher');
 const utils = require('./services/utils');
 const logger = require('./services/logger');
-
-//const io = require('socket.io')(http);
-
-const connectUrl = "mongodb://localhost:27017/voltus";
-const app = express();
-const server = http.createServer(app);
-
-const io = require('socket.io')(server, {
-    cors: {
-        origins: ['http://localhost:4200']
-    }
-});
-
 const cors = require('cors');
-const { Logger } = require('mongodb');
+const host = require('os');
+
+const app = express();
 app.use(cors());
 
 app.use(
@@ -29,13 +18,26 @@ app.use(
 )
 
 app.use(express.json())
+app.set('port', process.env.PORT || 3000);
+
+const server = http.createServer(app);
+
+const io = require('socket.io')(server, {
+    cors: {
+        origins: ['http://localhost:4200']
+    }
+});
+
+app.get('/', (req, res) => {
+    res.send("Fx-i Voltus runnint at " + host.hostname);
+});
 
 //get a specific customer
 app.get('/customer', (req, res) => {
 
     var q = urlParse(req.url, true).query;
     console.log("url=>", q);
-    var custId = q.id;
+    var custId = q.cid;
 
     repository.getCustomerById(custId, (val) => {
         console.log("=================", val);
@@ -134,7 +136,7 @@ io.on('connection', (socket) => {
                 data: ack,
                 success: success
             }
-            
+
             ack["success"] = success;
             logger.logAudit(corId, log);
             socket.emit('acknowledge-update', [ack]);
